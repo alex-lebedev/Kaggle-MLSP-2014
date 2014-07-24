@@ -1,4 +1,5 @@
-# SCH Kaggle competition
+# MSLP Kaggle competition
+# 2nd place solution
 # Author: Alexander V. Lebedev
 
 
