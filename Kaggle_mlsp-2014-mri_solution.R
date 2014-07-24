@@ -1,4 +1,4 @@
-# MSLP Kaggle competition
+# MLSP Kaggle competition
 # 2nd place solution
 # Author: Alexander V. Lebedev
 
