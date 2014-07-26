@@ -3,6 +3,10 @@ README
 
 # MLSP 2014 Schizophrenia Classification Challenge
 
+*italic* Author: Alexander V. Lebedev (University of Bergen)
+*italic* Date: 26/07/2014
+
+
 ## 1. Summary
 For this challenge, I implemented so-called "feature trimming", consisting of 1) introducing a random vector into the feature set, 2) calculating feature importance, 3) removing the features with importance below the "dummy feature".
 At the first step, I ran Random Forest [1] model and performed trimming based on Gini-index [2]. Then, after estimation of the inverse width parameter ("sigma"), I tuned C-parameter for my final model - Support Vector Machine with Gaussian Kernel (RBF-SVM) [3].
