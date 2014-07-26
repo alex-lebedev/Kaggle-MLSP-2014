@@ -96,7 +96,7 @@ barplot(t(imp), col=color[1])
 points(which(imp==imp['rand',]),0.6, col=color[2], type='h', lwd=2)
 ```
 
-![alt tag](https://www.dropbox.com/s/oxbm2tqdxnjoowv/Img01.png)
+![alt tag](https://cloud.githubusercontent.com/assets/4508892/3711386/e5b4496c-14d3-11e4-9c1d-5a94987dc4ac.png)
 
 
 Everything below importance of our "dummy" feature (random vector) can likely be ignored.
@@ -151,9 +151,6 @@ svmFit <- train(dat,y,
                 trControl = trainControl(method = "cv", number = 86, classProbs =  TRUE))
 ```
 
-```
-## Warning: There were missing values in resampled performance measures.
-```
 
 Making predictions:
 
