@@ -75,7 +75,7 @@ sigDist <- sigest(y ~ as.matrix(dat), data=dat, frac = 1)
 # Creating a tune grid for further C-parameter selection):
 svmTuneGrid <- data.frame(.sigma = sigDist[1], .C = 2^(-20:100))
 
-# And... training the final RBF-SVM model:
+# And... training the final RBF-SVM model with leave-one-out cross-validation:
 # (Yes. It's as simple as that!)
 
 svmFit <- train(dat,y,
