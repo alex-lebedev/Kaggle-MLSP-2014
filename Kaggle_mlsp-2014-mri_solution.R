@@ -32,7 +32,7 @@ y <- read.csv('/YOUR-PATH/Kaggle/SCH/Train/train_labels.csv')
 registerDoMC(cores=6)
 
 # Just converting a y-label vector into appropriate format:
-y <- as.factor(paste('X.', y, sep = ''))
+y <- as.factor(paste('X.', y[,2], sep = ''))
 
 # This step is important (I introduce a random vector into my feature set):
 all <- cbind(tr, rnorm(1:dim(tr)[1]))
