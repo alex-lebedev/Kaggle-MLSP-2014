@@ -3,7 +3,7 @@ README
 
 # MLSP 2014 Schizophrenia Classification Challenge
 
-*Author: Alexander V. Lebedev (University of Bergen)*
+**Author: Alexander V. Lebedev**
 
 *Date: 26/07/2014*
 
