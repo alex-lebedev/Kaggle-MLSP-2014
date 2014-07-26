@@ -96,7 +96,8 @@ barplot(t(imp), col=color[1])
 points(which(imp==imp['rand',]),0.6, col=color[2], type='h', lwd=2)
 ```
 
-![plot of chunk simpleplot](figure/simpleplot.png) 
+![alt tag](https://www.dropbox.com/s/oxbm2tqdxnjoowv/Img01.png)
+
 
 Everything below importance of our "dummy" feature (random vector) can likely be ignored.
 So, we "cut" everything that is on the left side of the orange line.
