@@ -1,6 +1,6 @@
 README:
 -----------------------------------------
-MLSP 2014 Schizophrenia Classification Challenge
+# MLSP 2014 Schizophrenia Classification Challenge
 -----------------------------------------
 
 
