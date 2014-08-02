@@ -179,7 +179,7 @@ write.table(pred, file = '/YOUR-PATH/Kaggle/SCH/submissions/submission_rbfSVM_RF
 To execute the code the following libraries must be installed: caret [3], randomForest [4], e1071 [5], kernlab [6], doMC [7], foreach [8], RColorBrewer [9]
 
 ## 6. Additional Comments and Observations
-In general, it was somehow difficult to evaluate performance of the models, since there was a substantial mismatch between cross-validated accuracies and the feedback that I was receiving during my submissions. It was one of the reasons why I decided not to go further with feature selection and more complex modeling approaches.
+In general, it was somewhat difficult to evaluate performance of the models, since there was a substantial mismatch between cross-validated accuracies and the feedback that I was receiving during my submissions. It was one of the reasons why I decided not to go further with feature selection and more complex modeling approaches.
 
 ## 7. References
 
