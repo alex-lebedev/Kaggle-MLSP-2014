@@ -3,7 +3,7 @@ README
 
 ## MLSP 2014 Schizophrenia Classification Challenge: 2nd position (solution)
 
-*Author: Alexander V. Lebedev*
+*Author: Alexander V. Lebedev (University of Bergen, Norway)*
 
 *Date: 26/07/2014*
 
