@@ -1,32 +1,32 @@
 README
 -----------------------------------------
 
-# MLSP 2014 Schizophrenia Classification Challenge: 2nd position (solution)
+## MLSP 2014 Schizophrenia Classification Challenge: 2nd position (solution)
 
 *Author: Alexander V. Lebedev*
 
 *Date: 26/07/2014*
 
 
-## 1. Summary
+### 1. Summary
 The goal of the competition (https://www.kaggle.com/c/mlsp-2014-mri) was to automatically detect subjects with schizophrenia based on multimodal features derived from the magnetic resonance imaging (MRI) data.
 For this challenge, I implemented so-called "feature trimming", consisting of 1) introducing a random vector into the feature set, 2) calculating feature importance, 3) removing the features with importance below the "dummy feature".
 At the first step, I ran Random Forest [1] model and performed trimming based on Gini-index [2]. Then, after estimation of the inverse width parameter ("sigma"), I tuned C-parameter for my final model - Support Vector Machine with Gaussian Kernel (RBF-SVM) [3].
 
 
-## 2. Feature Selection
+### 2. Feature Selection
 The key step was "feature trimming". Further steps were also quite simple and none of any sophisticated approaches (like ensembling, hierarchical models) were implemented. Generally, I tried to keep the design as simple as possible due to limited number of subjects available in the training set and therefore being concerned about overfitting.
 
 
-## 3. Modeling Techniques and Training
+### 3. Modeling Techniques and Training
 Details of the model and training procedures for each technique used in the final model. If models were combined or ensembled, describe that procedure as well. If external data was used, explain how this data was obtained and used.
 
 
-## 4. Code Description
+### 4. Code Description
 
-### 4.1 Preparatory step:
+#### 4.1 Preparatory step:
 
-#### 4.1.1 Load the libraries:
+##### 4.1.1 Load the libraries:
 
 ```r
 library(caret)
@@ -39,7 +39,7 @@ library(RColorBrewer)
 ```
 
 
-#### 4.1.2 Read the data:
+##### 4.1.2 Read the data:
 
 
 
@@ -57,9 +57,9 @@ tst <- merge(tstFC, tstSBM, by='Id')
 y <- read.csv('/YOUR-PATH/Kaggle/SCH/Train/train_labels.csv')
 ```
 
-### 4.2 Analysis
+#### 4.2 Analysis
 
-#### 4.2.1 "Feature Trimming"
+##### 4.2.1 "Feature Trimming"
 
 Registering 6 cores to speed up my computations:
 
@@ -122,7 +122,7 @@ Now I reduce my feature set:
 dat <- all[,rownames(imp)]
 ```
 
-#### 4.2.2 Final Model
+##### 4.2.2 Final Model
 I usually start from SVM and then proceed with ensemble methods. However, in this competition, the use of boosted trees did not result in superior performance and I stopped.
 
 First, I estimate "sigma" (inverse width parameter for the RBF-SVM)
@@ -176,13 +176,13 @@ write.table(pred, file = '/YOUR-PATH/Kaggle/SCH/submissions/submission_rbfSVM_RF
 ```
 
 
-## 5. Dependencies
+### 5. Dependencies
 To execute the code the following libraries must be installed: caret [3], randomForest [4], e1071 [5], kernlab [6], doMC [7], foreach [8], RColorBrewer [9]
 
-## 6. Additional Comments and Observations
+### 6. Additional Comments and Observations
 In general, it was somewhat difficult to evaluate performance of the models, since there was a substantial mismatch between cross-validated accuracies and the feedback that I was receiving during my submissions. It was one of the reasons why I decided not to go further with feature selection and more complex modeling approaches.
 
-## 7. References
+### 7. References
 
 [1] V.N. Vapnik (1995) The Nature of Statistical Learning Theory. Springer-Verlag New York, Inc. New York, NY, USA;
 
