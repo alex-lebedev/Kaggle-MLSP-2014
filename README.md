@@ -1,205 +1,120 @@
 README
 -----------------------------------------
 
-## MLSP 2014 Schizophrenia Classification Challenge: 2nd position (solution)
+## MLSP 2014 Schizophrenia Classification Challenge: 3rd position (solution)
 
-*Author: Alexander V. Lebedev*
+*Author: Karolis Koncevicius*
 
-*(University of Bergen, Norway)*
+*Email: Karolis Koncevicius*
 
-*Date: 26/07/2014*
+*Location: Vilnius University, Vilnius, Lithuania*
+
+*Date: 05/08/2014*
 
 
 ### 1. Summary
+
 The goal of the competition (https://www.kaggle.com/c/mlsp-2014-mri) was to automatically detect subjects with schizophrenia based on multimodal features derived from the magnetic resonance imaging (MRI) data.
-For this challenge, I implemented so-called "feature trimming", consisting of 1) introducing a random vector into the feature set, 2) calculating feature importance, 3) removing the features with importance below the "dummy feature".
-At the first step, I ran Random Forest [1] model and performed trimming based on Gini-index [2]. Then, after estimation of the inverse width parameter ("sigma"), I tuned C-parameter for my final model - Support Vector Machine with Gaussian Kernel (RBF-SVM) [3].
+The data used for this task had a peculiar property of having more features than available samples. Such situations are often called "High Dimensional Small Sample Size Data" (HDLSS) [1] in the literature and often
+present a lot of challenges in both model selection and error estimation [2]. To overcome these difficulties I utilized the Distance Weighted Discrimination (DWD) [3] method which was designed to deal with
+HDLSS settings. My winning entry was very simple: I used all of the available features, ran ten fold cross-validation to determine the penalty parameter and then fitted the DWD model.
 
 
 ### 2. Feature Selection
-The key step was "feature trimming". Further steps were also quite simple and none of any sophisticated approaches (like ensembling, hierarchical models) were implemented. Generally, I tried to keep the design as simple as possible due to limited number of subjects available in the training set and therefore being concerned about overfitting.
 
+3rd place winning entry used no feature selection.
+
+I also tried implementing a number of unsupervised feature selection methods: removing features with low variance, doing Principal Component Analysis (PCA), removing highly correlated features; But these approaches
+gave me lower private and public scores.
+
+Most likely explanation is that the main focus of HDLSS scenarios should be good generalization and feature selection is one possible source of overfitting [4].
 
 ### 3. Modeling Techniques and Training
-Details of the model and training procedures for each technique used in the final model. If models were combined or ensembled, describe that procedure as well. If external data was used, explain how this data was obtained and used.
 
+#### 3.1 Distance Weighted Discrimination.
+
+Distance weighted discrimination was used as single base clasifier. Below is a short and naive introduction of this method. For a more complete and formal description the reader is refered to [3]
+
+HDLSSS data occupy only a subspace of the whole feature space. The result of this is the existance of linear projection vectors that have the so called "data-pilling" property [5].
+This means that it is possible to project all the samples of both classes onto a two distinct points: one for each class. These kind of projection will surely classify the dataset at hand perfectly.
+But we should not expect this result to generalize well since the particular constalation of sample points in the feature space can be determined by the generalization of our sample. Yet the majority
+of learning methods (even the simple linear ones) are affected by this phenomenon since the functions they try to optimize often reaches maximum when the separating hyperplane finds such a projection.
+(As an example consider Fishers linear discriminant criterion, which tries to maximize between-class variance and minimize within-class variance.).
+
+One natural choice here can be the usage of support vector machines [6]. But even SVM's can be affected by partial data-piling since they base the parameters of the hyperplane on a few "support vector" samples.
+
+The DWD approach is to take all of the distances from samples to the separating hyperplane into account instead of maximizing the margin between farthest samples (support vectors). Simple way of allowing
+these distances to in fluence the separation boundary is to minimize the sum of the inverse distances. This gives high significance to those points that are close to the hyperplane, with little impact
+from points that are farther away.
+
+$$ \mu_1 = (\frac{1}{\sqrt{n}}, \frac{1}{\sqrt{n}}, ..., \frac{1}{\sqrt{n}}) $$
+
+In this case the solution that has more points farther away from the support vectros and separating hyperplane is preferable over the same margin-size solution with data points pilled close to support vectors.
+
+#### 3.2 Implementation.
+
+The DWD method uses a "second-order cone programming" (SOCP) optimization. It has implementation in matlab and R. Here I used R implementation [7].
+
+The implementation had one parameter C - the penalty cost associated with missclassification (similar to the one in SVM). Authors stated that they don't have clear guidelines for selection of this parameter
+and that it is a possible object of further studies.
+
+In my entry I ussed cross-validation to determine the value of this parameter. I selected several values (ranging from 1 to 1000) and ran 100 itterations of 10-fold cross validation for each. Then it became
+clear that lower values had lower classification accuracies and the roc-area reached it's maximum at about C=300. After that point it saturated and remained unchained up to a 1000. Therefore 300 was selected
+for the submission.
 
 ### 4. Code Description
 
-#### 4.1 Preparatory step:
+All the code needed to generate the solution is assembled into one R-script file. It was devided into 6 clearly-defined sections:
 
-##### 4.1.1 Load the libraries:
-
-```r
-library(caret)
-library(randomForest)
-library(e1071)
-library(kernlab)
-library(doMC)
-library(foreach)
-library(RColorBrewer)
-```
-
-
-##### 4.1.2 Read the data:
-
-
-
-```r
-# Training set:
-trFC <- read.csv('/YOUR-PATH/Kaggle/SCH/Train/train_FNC.csv')
-trSBM <- read.csv('/YOUR-PATH/Kaggle/SCH/Train/train_SBM.csv')
-tr <- merge(trFC, trSBM, by='Id')
-
-# Test set:
-tstFC <- read.csv('/YOUR-PATH/Kaggle/SCH/Test/test_FNC.csv')
-tstSBM <- read.csv('/YOUR-PATH/Kaggle/SCH/Test/test_SBM.csv')
-tst <- merge(tstFC, tstSBM, by='Id')
-
-y <- read.csv('/YOUR-PATH/Kaggle/SCH/Train/train_labels.csv')
-```
-
-#### 4.2 Analysis
-
-##### 4.2.1 "Feature Trimming"
-
-Registering 6 cores to speed up my computations:
-
-```r
-registerDoMC(cores=6)
-```
-
-Converting a y-label vector into appropriate format:
-
-
-```r
-y <- as.factor(paste('X.', y[,2], sep = ''))
-```
-
-Introducing a random vector into my feature set:
-
-```r
-all <- cbind(tr, rnorm(1:dim(tr)[1]))
-colnames(all)[412] <- 'rand'
-```
-
-Now I train Random Forest with this (full) feature set:
-
-```r
-rf.mod <- foreach(ntree=rep(2500, 6), .combine=combine, .multicombine=TRUE,
-                  .packages='randomForest') %dopar% {
-                    randomForest(all[,2:412], y, ntree=ntree)
-                  }
-```
-
-Looking at the feature importances:
-
-```r
-color <- brewer.pal(n = 8, "Dark2")
-imp <- as.data.frame(rf.mod$importance[order(rf.mod$importance),])
-barplot(t(imp), col=color[1])
-points(which(imp==imp['rand',]),0.6, col=color[2], type='h', lwd=2)
-```
-
-![plot of chunk simpleplot](https://cloud.githubusercontent.com/assets/4508892/3711386/e5b4496c-14d3-11e4-9c1d-5a94987dc4ac.png) 
-
-Everything below importance of our "dummy" feature (random vector) can likely be ignored.
-So, we "cut" everything that is on the left side of the orange line.
-
-
-```r
-imp <- subset(imp, imp>imp['rand',])
-```
-
-
-Saving the data in one rda-file for further analyses:
-
-```r
-save('all', 'y', 'tst', 'imp',  file = '/YOUR-PATH/Kaggle/SCH/Train/AllData.rda')
-```
-
-Now I reduce my feature set:
-
-```r
-dat <- all[,rownames(imp)]
-```
-
-##### 4.2.2 Final Model
-I usually start from SVM and then proceed with ensemble methods. However, in this competition, the use of boosted trees did not result in superior performance and I stopped.
-
-First, I estimate "sigma" (inverse width parameter for the RBF-SVM)
-(of note, sometimes I use a subset of my data, but here I used the whole training set due to its very limited size)
-
-```r
-sigDist <- sigest(y ~ as.matrix(dat), data=dat, frac = 1)
-```
-
-Creating a tune grid for further C-parameter selection):
-
-```r
-svmTuneGrid <- data.frame(.sigma = sigDist[1], .C = 2^(-20:100))
-```
-
-```
-## Warning: row names were found from a short variable and have been
-## discarded
-```
-
-And training the final RBF-SVM model:
-
-```r
-svmFit <- train(dat,y,
-                method = "svmRadial",
-                preProc = c("center", "scale"),
-                tuneGrid = svmTuneGrid,
-                trControl = trainControl(method = "cv", number = 86, classProbs =  TRUE))
-```
-
-
-Making predictions:
-
-```r
-ttst <- tst[,rownames(imp)]
-predTst <- predict(svmFit, ttst, type='prob')
-predTst <- predTst[,2]
-```
-
-Formatting submission:
-
-```r
-pred <- cbind(as.integer(tst$Id), as.numeric(predTst))
-colnames(pred) <- c('Id', 'Probability')
-```
-
-Writing:
-
-```r
-write.table(pred, file = '/YOUR-PATH/Kaggle/SCH/submissions/submission_rbfSVM_RFtrimmed.csv', sep=',', quote=F, row.names=F, fileEncoding = 'UTF-16LE')
-```
-
+1. Sources: This loads all the libraries and sets the main directory path.
+2. Load Data: This loads the .csv data files from "input" directory (data that was made available to download from Kaggle.com website).
+3. Prep Data: This prepares the data by comining both sets of features and writing labels into a single table. (Train and Test subsets separately).
+4. Cross-Validation: This step was used to select the penalty cost parameter. This is the most time-consuming step and can be skipped when running the code.
+5. Fit Model: Fits the DWD model.
+6. Write Scores: Writes the scores into the "output" directory.
 
 ### 5. Dependencies
-To execute the code the following libraries must be installed: caret [3], randomForest [4], e1071 [5], kernlab [6], doMC [7], foreach [8], RColorBrewer [9]
+To succesfully run the code the following R libraries are required: "DWD", "verification".
 
-### 6. Additional Comments and Observations
-In general, it was somewhat difficult to evaluate performance of the models, since there was a substantial mismatch between cross-validated accuracies and the feedback that I was receiving during my submissions. It was one of the reasons why I decided not to go further with feature selection and more complex modeling approaches.
+### 6. How To Generate The Solution
+I compiled all the code into a single R-script file. The first line of the script sets the working directory. Further it is assumed that there are 2 subdirectories within: "input" and "output".
+"input" directory had all the input files that were available to download for this competition from the Kaggle website. "output" directory can be left emtpy since it was only used to write
+the submission file.
 
-### 7. References
+The most lenghty step is cross-validation. This step can be skipped to save time.
 
-[1] V.N. Vapnik (1995) The Nature of Statistical Learning Theory. Springer-Verlag New York, Inc. New York, NY, USA;
 
-[2] L. Breiman (2001) Random Forests. Machine Learning Volume 45, Number 1: 5-32;
+### 7. Additional Comments and Observations
 
-[3] M. Kuhn. Contributions from Jed Wing SW, Andre Williams, Chris Keefer and Allan Engelhardt (2012) caret: Classification and Regression Training. R package version 5.15-023. http://cran.r-project.org/packages/caret/;
+Arguably the hardest part in this competition was not overfitting. With small amount of available samples it becomes hard to track the true error of misclassification. Cross validation may be
+non-reliable [8] especially if used multiple times on the same data with different models. If no a-priori information is available then simple and highly regularized models become the method of choice [9].
 
-[4] L. Breiman, A. Cutler, R port by Andy Liaw and Matthew Wiener (2014). randomForest: Breiman and Cutler's random forests for classification and regression. http://cran.r-project.org/web/packages/randomForest/;
+In the competition I tried following this philosophy of simple and regularized methods. Among the submited models were: "smartly" regularized linear discriminant analysis (LDA), distance weighted discrimination
+(DWD) and some variants of non-supervised feature selection followed by diagonal LDA. My goal in this competition was to compare the regularized LDA with DWD (with the hope that my LDA variant can outperform
+DWD) but in the end it could not beat out-of-the box DWD neighter in my internal cross-validation results nor on the leaderboard.
 
-[5] D. Meyer, E. Dimitriadou, K. Hornik, A. Weingessel, F. Leisch, C-C. Chang. C-C. Lin. Misc Functions of the Department of Statistics (e1071), TU Wien. http://cran.r-project.org/web/packages/e1071/;
+Data subset made available for training had an unequal number of cases and controls. If the final test subset also had this propery then one potential improvement could be taking the class-imbalance into account.
 
-[6] A. Karatzoglou, A. Smola, K. Hornik (2013). kernlab: Kernel-based Machine Learning Lab. http://cran.r-project.org/web/packages/kernlab/;
+### 8. References
 
-[7] Revolution Analytics. doMC (2014): Foreach parallel adaptor for the multicore package. http://cran.r-project.org/web/packages/doMC/;
+[1] Peter Hall, J. S. Marron, Amnon Neeman. Geometric representation of high dimension, low sample size data. Journal of the Royal Statistical Society: Series B (Statistical Methodology) Volume 67, Issue 3, pages 427-444, June 2005.
 
-[8] Revolution Analytics, Steve Weston (2014). foreach: Foreach looping construct for R. http://cran.r-project.org/web/packages/foreach/;
+[2] S. Raudys, Anil K. Jain. Small Sample Size Effects in Statistical Pattern Recognition: Recommendations for Practitioners. IEEE Transactions on pattern analysis and machine intelligence Vol. 13, No. 3, Match 1991.
 
-[9] Erich Neuwirth (2011). RColorBrewer: ColorBrewer palettes. http://cran.r-project.org/web/packages/RColorBrewer/.
+[3] J. S. Marron, Michael Todd, Jeongyoun Ahn. Distance Weighted Discrimination. Journal of the American Statistical Association; Volume 102, Issue 480, 2007.
+
+[4] S. Raudys. Feature Over-Selection. Structural, Syntactic, and Statistical Pattern Recognition Lecture Notes in Computer Science Volume 4109, 2006, pp. 622-631.
+
+[5] Jeongyoun Ahn, J. S. Marron. The maximal data piling direction for discrimination. Biometrika Volume 97, Issue 1 Pp. 254-259. 
+
+[6] V.N. Vapnik. The Nature of Statistical Learning Theory. Springer-Verlag New York, New York, USA, 1995.
+
+[7] Hanwen Huang, Xiaosun Lu, Yufeng Liu, Perry Haaland, J.S. Marron. R/DWD: distance-weighted discrimination for classification, visualization and batch adjustment. Bioinformatics. Apr 15, 2012; 28(8): 1182-1183.
+
+[8] UM Braga-Neto, ER Dougherty. Is cross-validation valid for small-sample microarray classification? Bioinformatics, Volume 20, Issue 3, Pp. 374-380.
+
+[9] Trevor Hastie, Robert Tibshirani, Jerome Friedman. The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Second Edition. February 2009. Springer-Verlag.
+
+
+
+
