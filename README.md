@@ -20,15 +20,11 @@ At the first step, I ran Random Forest [1] model and performed trimming based on
 The key step was "feature trimming". Further steps were also quite simple and none of any sophisticated approaches (like ensembling, hierarchical models) were implemented. Generally, I tried to keep the design as simple as possible due to limited number of subjects available in the training set and therefore being concerned about overfitting.
 
 
-### 3. Modeling Techniques and Training
-Details of the model and training procedures for each technique used in the final model. If models were combined or ensembled, describe that procedure as well. If external data was used, explain how this data was obtained and used.
+### 3. Code Description
 
+#### 3.1 Preparatory step:
 
-### 4. Code Description
-
-#### 4.1 Preparatory step:
-
-##### 4.1.1 Load the libraries:
+##### 3.1.1 Load the libraries:
 
 ```r
 library(caret)
@@ -41,7 +37,7 @@ library(RColorBrewer)
 ```
 
 
-##### 4.1.2 Read the data:
+##### 3.1.2 Read the data:
 
 
 
@@ -59,9 +55,9 @@ tst <- merge(tstFC, tstSBM, by='Id')
 y <- read.csv('/YOUR-PATH/Kaggle/SCH/Train/train_labels.csv')
 ```
 
-#### 4.2 Analysis
+#### 3.2 Analysis
 
-##### 4.2.1 "Feature Trimming"
+##### 3.2.1 "Feature Trimming"
 
 Registering 6 cores to speed up my computations:
 
@@ -124,7 +120,7 @@ Now I reduce my feature set:
 dat <- all[,rownames(imp)]
 ```
 
-##### 4.2.2 Final Model
+##### 3.2.2 Final Model
 I usually start from SVM and then proceed with ensemble methods. However, in this competition, the use of boosted trees did not result in superior performance and I stopped.
 
 First, I estimate "sigma" (inverse width parameter for the RBF-SVM)
@@ -178,13 +174,13 @@ write.table(pred, file = '/YOUR-PATH/Kaggle/SCH/submissions/submission_rbfSVM_RF
 ```
 
 
-### 5. Dependencies
+### 4. Dependencies
 To execute the code the following libraries must be installed: caret [3], randomForest [4], e1071 [5], kernlab [6], doMC [7], foreach [8], RColorBrewer [9]
 
-### 6. Additional Comments and Observations
+### 5. Additional Comments and Observations
 In general, it was somewhat difficult to evaluate performance of the models, since there was a substantial mismatch between cross-validated accuracies and the feedback that I was receiving during my submissions. It was one of the reasons why I decided not to go further with feature selection and more complex modeling approaches.
 
-### 7. References
+### 6. References
 
 [1] V.N. Vapnik (1995) The Nature of Statistical Learning Theory. Springer-Verlag New York, Inc. New York, NY, USA;
 
